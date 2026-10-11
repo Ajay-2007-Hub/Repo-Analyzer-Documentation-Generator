@@ -1,0 +1,16 @@
+# RepoInsight AI Dependencies
+
+streamlit
+fastapi
+uvicorn
+ollama
+gitpython
+tree-sitter
+graphviz
+reportlab
+python-pptx
+pydantic
+pydantic-settings
+pytest
+ruff
+python-dotenv

@@ -1,0 +1,14 @@
+# Local Environment
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Analysis Outputs
+repositories/
+outputs/
+database/
+
+# OS
+.DS_Store
+Thumbs.db
