@@ -1,13 +1,17 @@
 import os
 import re
-from typing import List, Tuple, Optional
-from app.models.schemas import ExternalService, AuthInfo, ScanResult
+from urllib.parse import urlparse
+
+from app.models.schemas import AuthInfo, ExternalService, ScanResult
+
 
 class ExternalAPIAnalyzer:
     def __init__(self, repo_path: str):
         self.repo_path = repo_path
 
-    def analyze(self, scan_result: ScanResult) -> Tuple[List[ExternalService], Optional[AuthInfo]]:
+    def analyze(
+        self, scan_result: ScanResult
+    ) -> tuple[list[ExternalService], AuthInfo | None]:
         external_services = []
         auth_info = None
 
@@ -35,10 +39,9 @@ class ExternalAPIAnalyzer:
             urls = re.findall(url_pattern, content)
             for url in urls:
                 # Extract domain
-                from urllib.parse import urlparse
-                domain = urlparse(url).netloc
+                domain = urlparse(url).hostname
                 if domain and not any(x in domain for x in ['localhost', '127.0.0.1']):
-                    domains.add(domain)
+                    domains.add(domain.lower())
 
             # 2. Detect Auth
             for auth_type, sigs in auth_sigs.items():
@@ -58,5 +61,5 @@ class ExternalAPIAnalyzer:
         try:
             with open(os.path.join(self.repo_path, rel_path), 'r', encoding='utf-8', errors='ignore') as f:
                 return f.read()
-        except Exception:
+        except OSError:
             return ""

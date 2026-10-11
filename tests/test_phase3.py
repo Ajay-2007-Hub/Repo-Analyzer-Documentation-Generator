@@ -1,9 +1,9 @@
-import pytest
-import os
-from app.analyzers.api_python import PythonAPIAnalyzer
+from app.analyzers.api import APIAnalyzer
 from app.analyzers.api_express import ExpressAPIAnalyzer
+from app.analyzers.api_python import PythonAPIAnalyzer
 from app.analyzers.api_spring import SpringAPIAnalyzer
-from app.models.schemas import Endpoint
+from app.models.schemas import ProjectAnalysis, RepoInfo
+
 
 def test_fastapi_endpoint_detection(tmp_path):
     repo_dir = tmp_path / "fastapi_app"
@@ -55,3 +55,31 @@ def test_spring_endpoint_detection(tmp_path):
 
     paths = [e.path for e in endpoints]
     assert "/api/users/profile" in paths
+
+def test_flask_methods_and_frontend_only_repository(tmp_path):
+    flask_file = tmp_path / "app.py"
+    flask_file.write_text(
+        "from flask import Flask\n"
+        "app = Flask(__name__)\n"
+        "@app.route('/health', methods=['GET', 'POST'])\n"
+        "def health():\n    return 'ok'\n",
+        encoding="utf-8",
+    )
+    flask_endpoints = PythonAPIAnalyzer(str(tmp_path)).analyze(["app.py"])
+    assert any(
+        endpoint.path == "/health" and endpoint.method == "GET, POST"
+        for endpoint in flask_endpoints
+    )
+
+    project = ProjectAnalysis(
+        repo_info=RepoInfo(
+            languages={"JavaScript": 100},
+            frameworks=["React"],
+            dependencies=["react"],
+            entry_points=["src/main.jsx"],
+        ),
+        top_files=[],
+    )
+    assert APIAnalyzer(str(tmp_path)).analyze_with_files(
+        ["src/main.jsx"], project
+    ) == []

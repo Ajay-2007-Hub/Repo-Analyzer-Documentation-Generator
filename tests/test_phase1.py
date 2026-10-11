@@ -1,12 +1,12 @@
 import pytest
+
 from app.core.cloner import Cloner
 from app.core.scanner import Scanner
-import os
-import shutil
+
 
 @pytest.fixture
-def cloner():
-    return Cloner(base_dir="tests/temp_repos")
+def cloner(tmp_path):
+    return Cloner(base_dir=str(tmp_path / "temp_repos"))
 
 @pytest.fixture
 def scanner():
@@ -34,10 +34,8 @@ def test_clone_and_scan_integration(cloner, scanner):
         assert result.commit_sha is not None
 
     finally:
-        cloner.cleanup(repo_path if 'repo_path' in locals() else "")
-        if os.path.exists("tests/temp_repos"):
-            # Use the cloner's cleanup method instead of shutil.rmtree
-            cloner.cleanup("tests/temp_repos")
+        if "repo_path" in locals():
+            cloner.cleanup(repo_path)
 
 def test_scanner_binary_detection(scanner, tmp_path):
     # Create a dummy binary file

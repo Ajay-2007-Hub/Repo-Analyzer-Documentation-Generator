@@ -1,8 +1,7 @@
 import os
-from typing import Optional
 
-from app.llm.ollama_client import OllamaClient
 from app.llm.context import ContextBuilder
+from app.llm.ollama_client import OllamaClient
 from app.models.architecture import ArchitectureGraph
 from app.models.schemas import (
     AuthInfo,
@@ -18,7 +17,8 @@ from app.models.schemas import (
 class ArchitectureAnalyzer:
     """Analyzes repository context with Ollama to generate architecture diagrams."""
 
-    def __init__(self):
+    def __init__(self, repo_path: str = "."):
+        self.repo_path = repo_path
         self.ollama_client = OllamaClient()
 
     def analyze(
@@ -29,7 +29,7 @@ class ArchitectureAnalyzer:
         db_info: DatabaseInfo,
         auth_info: AuthInfo,
         security_findings: list[SecurityFinding],
-        external_services: Optional[list[ExternalService]] = None,
+        external_services: list[ExternalService] | None = None,
     ) -> ArchitectureGraph:
         """
         Generate architecture graph using Ollama.
@@ -38,7 +38,7 @@ class ArchitectureAnalyzer:
             ArchitectureGraph with nodes and edges validated by Pydantic.
         """
         context_builder = ContextBuilder(
-            repo_path=".",
+            repo_path=self.repo_path,
             token_budget=int(os.getenv("OLLAMA_NUM_CTX", "8192")) - 2048,
         )
         prompt = context_builder.build_context(
@@ -183,4 +183,4 @@ class ArchitectureAnalyzer:
         )
 
 
-from app.models.architecture import ArchNode, ArchEdge
+from app.models.architecture import ArchEdge, ArchNode
