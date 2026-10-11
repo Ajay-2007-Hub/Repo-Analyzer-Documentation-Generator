@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 from app.analyzers.architecture import ArchitectureAnalyzer
@@ -248,3 +249,40 @@ def test_diagram_generator_mermaid_format():
         assert "web" in content
         assert "api" in content
         assert "pg" in content
+
+
+def test_diagram_generator_falls_back_without_graphviz(tmp_path, monkeypatch):
+    from PIL import Image
+
+    graph = ArchitectureGraph(
+        title="Service <Architecture>",
+        nodes=[
+            ArchNode(
+                id="api",
+                label="API <Backend>",
+                node_type="backend",
+                description="Handles requests",
+            ),
+            ArchNode(id="db", label="PostgreSQL", node_type="database"),
+        ],
+        edges=[
+            ArchEdge(
+                from_node="api",
+                to_node="db",
+                label="queries",
+                edge_type="data",
+            )
+        ],
+    )
+    generator = DiagramGenerator(output_dir=str(tmp_path))
+    monkeypatch.setattr(generator, "_generate_graphviz", lambda *args, **kwargs: None)
+
+    results = generator.generate_all(graph, "fallback-test")
+
+    assert set(results) == {"png", "svg", "mermaid"}
+    with Image.open(results["png"]) as image:
+        assert image.format == "PNG"
+        assert image.width > 0 and image.height > 0
+    svg = Path(results["svg"]).read_text(encoding="utf-8")
+    assert "<svg " in svg
+    assert "API &lt;Backend&gt;" in svg

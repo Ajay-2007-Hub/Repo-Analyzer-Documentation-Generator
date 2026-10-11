@@ -72,9 +72,10 @@ not currently wired into the analyzers.
 
 ## Installation
 
-Install Python 3.11 or newer, Git, Graphviz, and Ollama first. Graphviz must
-include its system `dot` executable on `PATH`; the Python package alone is not
-enough. Verify the tools from PowerShell:
+Install Python 3.11 or newer, Git, and Ollama first. The app prefers Graphviz
+when its system `dot` executable is installed and on `PATH`; if not, it uses a
+built-in Pillow renderer for PNG/SVG architecture diagrams. Verify available
+tools from PowerShell:
 
 ```powershell
 python --version
