@@ -1,13 +1,15 @@
 import json
 import os
 import time
+from pathlib import Path
 from typing import TypeVar
 
 import requests
 from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -15,7 +17,7 @@ T = TypeVar("T", bound=BaseModel)
 class OllamaClient:
     def __init__(self):
         self.host = os.getenv("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
-        self.model = os.getenv("OLLAMA_MODEL", "qwen3-coder")
+        self.model = os.getenv("OLLAMA_MODEL", "qwen3.5:latest")
         self.num_ctx = int(os.getenv("OLLAMA_NUM_CTX", "8192"))
         self.timeout = 60
 
@@ -44,9 +46,35 @@ class OllamaClient:
             for model in models
         )
 
+    def validate_model_available(self) -> None:
+        try:
+            response = requests.get(f"{self.host}/api/tags", timeout=5)
+            response.raise_for_status()
+            models = response.json().get("models", [])
+        except (requests.RequestException, json.JSONDecodeError, AttributeError) as error:
+            raise RuntimeError(
+                f"Could not verify configured Ollama model '{self.model}' at "
+                f"{self.host}: {error}"
+            ) from error
+
+        if not any(
+            isinstance(model, dict)
+            and isinstance(model.get("name"), str)
+            and (
+                model["name"] == self.model
+                or model["name"].startswith(f"{self.model}:")
+            )
+            for model in models
+        ):
+            raise RuntimeError(
+                f"Configured Ollama model '{self.model}' is not available at "
+                f"{self.host}. Install it with: ollama pull {self.model}"
+            )
+
     def generate_structured(
         self, prompt: str, response_model: type[T], retries: int = 3
     ) -> T:
+        self.validate_model_available()
         payload = {
             "model": self.model,
             "prompt": prompt,

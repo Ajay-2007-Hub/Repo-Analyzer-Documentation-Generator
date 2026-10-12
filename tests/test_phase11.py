@@ -176,6 +176,11 @@ def test_api_analyzer_survives_syntax_errors_and_non_utf8_sources(tmp_path):
 
 def test_ollama_invalid_json_retries_once_then_surfaces_failure(monkeypatch):
     client = OllamaClient()
+    tags_response = Mock(status_code=200)
+    tags_response.json.return_value = {"models": [{"name": client.model}]}
+    monkeypatch.setattr(
+        "app.llm.ollama_client.requests.get", Mock(return_value=tags_response)
+    )
     invalid = Mock()
     invalid.json.return_value = {"response": "{not valid JSON"}
     post = Mock(return_value=invalid)

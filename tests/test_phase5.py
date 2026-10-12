@@ -33,7 +33,7 @@ def test_ollama_health_and_model_checks(monkeypatch):
     client = OllamaClient()
     response = Mock(status_code=200)
     response.json.return_value = {
-        "models": [{"name": "qwen3-coder:latest"}, {"name": "other-model"}]
+        "models": [{"name": "qwen3.5:latest"}, {"name": "other-model"}]
     }
     monkeypatch.setattr(requests, "get", Mock(return_value=response))
 
@@ -44,14 +44,63 @@ def test_ollama_health_and_model_checks(monkeypatch):
 def test_ollama_model_check_rejects_partial_name_match(monkeypatch):
     client = OllamaClient()
     response = Mock(status_code=200)
-    response.json.return_value = {"models": [{"name": "qwen3-coder-variant"}]}
+    response.json.return_value = {"models": [{"name": "qwen3.5-variant"}]}
     monkeypatch.setattr(requests, "get", Mock(return_value=response))
 
     assert client.is_model_available() is False
 
 
+def test_ollama_client_loads_environment_configuration(monkeypatch):
+    monkeypatch.setenv("OLLAMA_HOST", "http://ollama.local:11434/")
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen3.5:latest")
+    monkeypatch.setenv("OLLAMA_NUM_CTX", "8192")
+
+    client = OllamaClient()
+
+    assert client.host == "http://ollama.local:11434"
+    assert client.model == "qwen3.5:latest"
+    assert client.num_ctx == 8192
+
+
+def test_ollama_missing_model_error_names_configured_model(monkeypatch):
+    client = OllamaClient()
+    response = Mock(status_code=200)
+    response.json.return_value = {"models": [{"name": "other-model"}]}
+    monkeypatch.setattr(requests, "get", Mock(return_value=response))
+    post = Mock()
+    monkeypatch.setattr(requests, "post", post)
+
+    with pytest.raises(RuntimeError, match="qwen3.5:latest.*ollama pull"):
+        client.generate_structured("prompt", OllamaProbe)
+    post.assert_not_called()
+
+
+def test_ollama_generate_uses_configured_model_and_host(monkeypatch):
+    monkeypatch.setenv("OLLAMA_HOST", "http://ollama.local:11434/")
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen3.5:latest")
+    monkeypatch.setenv("OLLAMA_NUM_CTX", "8192")
+    client = OllamaClient()
+    tags_response = Mock(status_code=200)
+    tags_response.json.return_value = {"models": [{"name": client.model}]}
+    monkeypatch.setattr(requests, "get", Mock(return_value=tags_response))
+    generated_response = Mock()
+    generated_response.json.return_value = {"response": '{"status": "ready"}'}
+    post = Mock(return_value=generated_response)
+    monkeypatch.setattr(requests, "post", post)
+
+    result = client.generate_structured("prompt", OllamaProbe)
+
+    assert result.status == "ready"
+    assert post.call_args.args[0] == "http://ollama.local:11434/api/generate"
+    assert post.call_args.kwargs["json"]["model"] == "qwen3.5:latest"
+    assert post.call_args.kwargs["json"]["options"]["num_ctx"] == 8192
+
+
 def test_ollama_structured_response_retries_validation_once(monkeypatch):
     client = OllamaClient()
+    tags_response = Mock(status_code=200)
+    tags_response.json.return_value = {"models": [{"name": client.model}]}
+    monkeypatch.setattr(requests, "get", Mock(return_value=tags_response))
     invalid_response = Mock()
     invalid_response.json.return_value = {"response": '{"wrong": "shape"}'}
     valid_response = Mock()
@@ -75,6 +124,9 @@ def test_ollama_structured_response_retries_validation_once(monkeypatch):
 
 def test_ollama_structured_response_retries_transient_request(monkeypatch):
     client = OllamaClient()
+    tags_response = Mock(status_code=200)
+    tags_response.json.return_value = {"models": [{"name": client.model}]}
+    monkeypatch.setattr(requests, "get", Mock(return_value=tags_response))
     valid_response = Mock()
     valid_response.json.return_value = {"response": '{"status": "ready"}'}
     post = Mock(

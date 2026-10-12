@@ -103,7 +103,7 @@ Start Ollama, then pull the model configured below (the model download may be
 large):
 
 ```powershell
-ollama pull qwen3-coder
+ollama pull qwen3.5:latest
 ollama list
 ```
 
@@ -118,7 +118,7 @@ limits are read when the service starts.
 | Variable | Default | Description |
 | --- | --- | --- |
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama server URL |
-| `OLLAMA_MODEL` | `qwen3-coder` | Installed Ollama model name |
+| `OLLAMA_MODEL` | `qwen3.5:latest` | Installed Ollama model name |
 | `OLLAMA_NUM_CTX` | `8192` | Model context budget |
 | `GITHUB_TOKEN` | empty | Optional GitHub token for repository access |
 | `MAX_REPO_MB` | `100` | Maximum aggregate repository data scanned |

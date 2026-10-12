@@ -1,13 +1,14 @@
 import os
 import time
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import requests
 import streamlit as st
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env")
 
 DEFAULT_API_URL = os.getenv("REPOINSIGHT_API_URL", "http://localhost:8000").rstrip("/")
 DEFAULT_OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
