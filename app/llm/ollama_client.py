@@ -19,7 +19,7 @@ class OllamaClient:
         self.host = os.getenv("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
         self.model = os.getenv("OLLAMA_MODEL", "qwen3.5:latest")
         self.num_ctx = int(os.getenv("OLLAMA_NUM_CTX", "8192"))
-        self.timeout = 60
+        self.timeout = int(os.getenv("OLLAMA_TIMEOUT", "300"))
 
     def check_health(self) -> bool:
         try:

@@ -120,6 +120,7 @@ limits are read when the service starts.
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama server URL |
 | `OLLAMA_MODEL` | `qwen3.5:latest` | Installed Ollama model name |
 | `OLLAMA_NUM_CTX` | `8192` | Model context budget |
+| `OLLAMA_TIMEOUT` | `300` | Maximum seconds to wait for an Ollama generation request |
 | `GITHUB_TOKEN` | empty | Optional GitHub token for repository access |
 | `MAX_REPO_MB` | `100` | Maximum aggregate repository data scanned |
 | `MAX_FILES` | `5000` | Maximum number of scanned files |

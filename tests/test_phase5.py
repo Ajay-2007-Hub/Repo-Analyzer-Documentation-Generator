@@ -54,12 +54,14 @@ def test_ollama_client_loads_environment_configuration(monkeypatch):
     monkeypatch.setenv("OLLAMA_HOST", "http://ollama.local:11434/")
     monkeypatch.setenv("OLLAMA_MODEL", "qwen3.5:latest")
     monkeypatch.setenv("OLLAMA_NUM_CTX", "8192")
+    monkeypatch.setenv("OLLAMA_TIMEOUT", "180")
 
     client = OllamaClient()
 
     assert client.host == "http://ollama.local:11434"
     assert client.model == "qwen3.5:latest"
     assert client.num_ctx == 8192
+    assert client.timeout == 180
 
 
 def test_ollama_missing_model_error_names_configured_model(monkeypatch):
@@ -94,6 +96,7 @@ def test_ollama_generate_uses_configured_model_and_host(monkeypatch):
     assert post.call_args.args[0] == "http://ollama.local:11434/api/generate"
     assert post.call_args.kwargs["json"]["model"] == "qwen3.5:latest"
     assert post.call_args.kwargs["json"]["options"]["num_ctx"] == 8192
+    assert post.call_args.kwargs["timeout"] == client.timeout
 
 
 def test_ollama_structured_response_retries_validation_once(monkeypatch):
